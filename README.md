@@ -8,4 +8,4 @@ https://java-project-99-60ng.onrender.com/welcome
 
 ## Requirements
 -   Java 21+
-- Gradle 8+
+-   Gradle 8+
