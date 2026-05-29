@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:development
+    username: sa
+    password: sa
+
+  h2:
+    console:
+      enabled: true         # включаем веб-консоль H2
+      path: /h2-console     # адрес консоли: http://localhost:8080/h2-console

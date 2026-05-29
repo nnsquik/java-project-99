@@ -1,0 +1,5 @@
+spring:
+  jpa:
+    show-sql: true        # показывать SQL-запросы в логах
+    hibernate:
+      ddl-auto: update    # автоматически обновлять схему БД
