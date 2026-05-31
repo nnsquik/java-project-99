@@ -3,6 +3,7 @@ package hexlet.code.component;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,12 +16,15 @@ public class DataInitializer implements ApplicationRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${admin.password:qwerty}")
+    private String adminPassword;
+
     @Override
     public void run(ApplicationArguments args) {
         if (userRepository.findByEmail("hexlet@example.com").isEmpty()) {
             User admin = new User();
             admin.setEmail("hexlet@example.com");
-            admin.setPasswordDigest(passwordEncoder.encode("qwerty"));
+            admin.setPasswordDigest(passwordEncoder.encode(adminPassword));
             userRepository.save(admin);
         }
     }
