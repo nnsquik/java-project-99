@@ -53,4 +53,10 @@ public class UserService {
     public void delete(Long id) {
         userRepository.deleteById(id);
     }
+
+    public boolean isOwner(Long id, String email) {
+        return userRepository.findById(id)
+                .map(user -> user.getEmail().equals(email))
+                .orElse(false);
+    }
 }
