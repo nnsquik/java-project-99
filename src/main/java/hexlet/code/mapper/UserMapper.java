@@ -2,6 +2,7 @@ package hexlet.code.mapper;
 
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserDTO;
+import hexlet.code.dto.UserUpdateDTO;
 import hexlet.code.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
@@ -22,5 +23,5 @@ public abstract class UserMapper {
     }
     public abstract UserDTO map(User user);
     public abstract User map(UserCreateDTO dto);
-    public abstract void update(UserCreateDTO dto, @MappingTarget User user);
+    public abstract void update(UserUpdateDTO dto, @MappingTarget User user);
 }
