@@ -1,6 +1,7 @@
 package hexlet.code;
 
 import hexlet.code.model.User;
+import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.utils.JWTUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,9 @@ public class UserControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
     private MockMvc mockMvc;
 
     @Autowired
@@ -45,6 +49,7 @@ public class UserControllerTest {
                 .build();
 
         userRepository.deleteAll();
+        taskStatusRepository.deleteAll();
 
         var user = new User();
         user.setEmail("test@test.com");
