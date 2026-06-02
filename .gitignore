@@ -90,3 +90,5 @@ gradle.lockfile
 jte-classes/
 
 src/main/resources/certs/*.pem
+
+node_modules/

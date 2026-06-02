@@ -1,5 +1,8 @@
 FROM eclipse-temurin:21-jdk
 
+# Установка Node.js для сборки фронтенда
+RUN apt-get update && apt-get install -y nodejs npm
+
 WORKDIR /app
 
 COPY . .
