@@ -33,7 +33,6 @@ public class UserService {
 
     public UserDTO create(UserCreateDTO dto) {
         User user = userMapper.map(dto);
-        user.setPasswordDigest(passwordEncoder.encode(dto.getPassword()));
         userRepository.save(user);
         return userMapper.map(user);
     }
@@ -42,11 +41,6 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         userMapper.update(dto, user);
-
-        if (dto.getPassword().isPresent()) {
-            user.setPasswordDigest(passwordEncoder.encode(dto.getPassword().get()));
-        }
-
         userRepository.save(user);
         return userMapper.map(user);
     }

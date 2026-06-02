@@ -19,4 +19,6 @@ public class UserCreateDTO {
     @NotBlank(message = "пароль обязателен!")
     @Size(min = 3, message = "пароль минимум 3 символа!")
     private String password;
+
+    private String passwordDigest;
 }
