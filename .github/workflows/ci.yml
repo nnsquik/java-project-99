@@ -37,6 +37,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Generate RSA keys
+        run: |
+          mkdir -p src/main/resources/certs
+          openssl genrsa -out src/main/resources/certs/private.pem 2048
+          openssl rsa -in src/main/resources/certs/private.pem \
+            -pubout -out src/main/resources/certs/public.pem
+
       # 5. Собираем проект и запускаем тесты
       - name: Build with Gradle
         run: ./gradlew build
