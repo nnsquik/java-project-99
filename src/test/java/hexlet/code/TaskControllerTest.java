@@ -1,6 +1,9 @@
 package hexlet.code;
 
+import hexlet.code.model.Task;
+import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
+import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.utils.JWTUtils;
@@ -14,32 +17,34 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-@SpringBootTest
-public class UserControllerTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class TaskControllerTest {
 
     @Autowired
     private WebApplicationContext context;
 
     @Autowired
-    private UserRepository userRepository;
+    private TaskRepository taskRepository;
 
     @Autowired
     private TaskStatusRepository taskStatusRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private JWTUtils jwtUtils;
 
     private MockMvc mockMvc;
     private String token;
+    private Task testTask;
 
     @BeforeEach
     public void setUp() {
@@ -48,92 +53,82 @@ public class UserControllerTest {
                 .apply(SecurityMockMvcConfigurers.springSecurity())
                 .build();
 
-        userRepository.deleteAll();
+        taskRepository.deleteAll();
         taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
 
         var user = new User();
         user.setEmail("test@test.com");
         user.setPasswordDigest("qwerty");
         userRepository.save(user);
 
+        var status = new TaskStatus();
+        status.setName("Draft");
+        status.setSlug("draft");
+        taskStatusRepository.save(status);
+
+        var task = new Task();
+        task.setName("Test task");
+        task.setDescription("Test content");
+        task.setTaskStatus(status);
+        taskRepository.save(task);
+
         token = jwtUtils.generateToken(user.getEmail());
+        testTask = task;
     }
 
     @Test
-    public void testGetAllUsers() throws Exception {
-        mockMvc.perform(get("/api/users")
+    public void testGetAllTasks() throws Exception {
+        mockMvc.perform(get("/api/tasks")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].title").value("Test task"));
     }
 
     @Test
-    public void testCreateUser() throws Exception {
-        var body = """
-                {
-                    "email": "new@test.com",
-                    "password": "123"
-                }
-                """;
-
-        mockMvc.perform(post("/api/users")
+    public void testCreateTask() throws Exception {
+        mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body)
+                        .content("""
+                                {
+                                    "title": "New task",
+                                    "content": "New content",
+                                    "status": "draft"
+                                }
+                                """)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("new@test.com"))
-                .andExpect(jsonPath("$.password").doesNotExist());
+                .andExpect(jsonPath("$.title").value("New task"))
+                .andExpect(jsonPath("$.status").value("draft"));
     }
 
     @Test
-    public void testCreateUserWithInvalidEmail() throws Exception {
-        var body = """
-                {
-                    "email": "not-an-email",
-                    "password": "123"
-                }
-                """;
-
-        mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body)
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    public void testGetUserById() throws Exception {
-        var id = userRepository.findByEmail("test@test.com").get().getId();
-
-        mockMvc.perform(get("/api/users/" + id)
+    public void testGetTaskById() throws Exception {
+       mockMvc.perform(get("/api/tasks/" + testTask.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("test@test.com"));
+                .andExpect(jsonPath("$.title").value("Test task"));
     }
 
     @Test
-    public void testUpdateUser() throws Exception {
-        var id = userRepository.findByEmail("test@test.com").get().getId();
-
-        var updateBody = """
-                {
-                    "email": "updated@test.com"
-                }
-                """;
-
-        mockMvc.perform(put("/api/users/" + id)
+    public void testUpdateTask() throws Exception {
+        mockMvc.perform(put("/api/tasks/" + testTask.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateBody)
+                        .content("""
+                                {
+                                    "title": "Updated task"
+                                }
+                                """)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("updated@test.com"));
+                .andExpect(jsonPath("$.title").value("Updated task"))
+                .andExpect(jsonPath("$.content").value("Test content")); // старое поле не затёрлось
     }
 
     @Test
-    public void testDeleteUser() throws Exception {
-        var id = userRepository.findByEmail("test@test.com").get().getId();
-
-        mockMvc.perform(delete("/api/users/" + id)
+    public void testDeleteTask() throws Exception {
+        mockMvc.perform(delete("/api/tasks/" + testTask.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }

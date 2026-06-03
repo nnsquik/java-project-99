@@ -35,11 +35,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Autowired
         private TaskStatusRepository taskStatusRepository;
 
-        private MockMvc mockMvc;
-
         @Autowired
         private JWTUtils jwtUtils;
+
         private String token;
+        private MockMvc mockMvc;
 
         @BeforeEach
         public void setUp() {

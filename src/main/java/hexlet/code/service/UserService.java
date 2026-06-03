@@ -46,6 +46,11 @@ public class UserService {
     }
 
     public void delete(Long id) {
+        var user = userRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!user.getTasks().isEmpty()) {
+            throw new RuntimeException("Cannot delete user with tasks");
+        }
         userRepository.deleteById(id);
     }
 

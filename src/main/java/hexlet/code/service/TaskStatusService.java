@@ -44,6 +44,11 @@ public class TaskStatusService {
     }
 
     public void delete(Long id) {
+        var taskStatus = taskStatusRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("TaskStatus not found"));
+        if (!taskStatus.getTasks().isEmpty()) {
+            throw new RuntimeException("Cannot delete status with tasks");
+        }
         taskStatusRepository.deleteById(id);
     }
 }
