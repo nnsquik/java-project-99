@@ -1,7 +1,7 @@
 package hexlet.code.controller;
 
 import hexlet.code.dto.auth.AuthDTO;
-import hexlet.code.utils.JWTUtils;
+import hexlet.code.util.JWTUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

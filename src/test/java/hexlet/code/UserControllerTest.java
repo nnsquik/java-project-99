@@ -3,7 +3,7 @@ package hexlet.code;
 import hexlet.code.model.User;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
-import hexlet.code.utils.JWTUtils;
+import hexlet.code.util.JWTUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

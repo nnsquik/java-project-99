@@ -1,7 +1,9 @@
 package hexlet.code.component;
 
+import hexlet.code.model.Label;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
+import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class DataInitializer implements ApplicationRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TaskStatusRepository taskStatusRepository;
+    private final LabelRepository labelRepository;
 
     @Value("${admin.password:qwerty}")
     private String adminPassword;
@@ -47,6 +50,15 @@ public class DataInitializer implements ApplicationRunner {
                 taskStatus.setName(status[0]);
                 taskStatus.setSlug(status[1]);
                 taskStatusRepository.save(taskStatus);
+            }
+        }
+
+        var defaultLabels = List.of("feature", "bug");
+        for (var labelName : defaultLabels) {
+            if (labelRepository.findByName(labelName).isEmpty()) {
+                var label = new Label();
+                label.setName(labelName);
+                labelRepository.save(label);
             }
         }
     }

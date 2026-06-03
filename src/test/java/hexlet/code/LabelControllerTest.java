@@ -1,10 +1,8 @@
 package hexlet.code;
 
-import hexlet.code.model.Task;
-import hexlet.code.model.TaskStatus;
-import hexlet.code.model.User;
+import hexlet.code.model.Label;
+import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
-import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.util.JWTUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,16 +23,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class TaskControllerTest {
+public class LabelControllerTest {
 
     @Autowired
     private WebApplicationContext context;
 
     @Autowired
-    private TaskRepository taskRepository;
+    private LabelRepository labelRepository;
 
     @Autowired
-    private TaskStatusRepository taskStatusRepository;
+    private TaskRepository taskRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -44,7 +42,7 @@ public class TaskControllerTest {
 
     private MockMvc mockMvc;
     private String token;
-    private Task testTask;
+    private Label testLabel;
 
     @BeforeEach
     public void setUp() {
@@ -54,81 +52,70 @@ public class TaskControllerTest {
                 .build();
 
         taskRepository.deleteAll();
-        taskStatusRepository.deleteAll();
-        userRepository.deleteAll();
+        labelRepository.deleteAll();
 
-        var user = new User();
-        user.setEmail("test@test.com");
-        user.setPasswordDigest("qwerty");
-        userRepository.save(user);
+        if (userRepository.findByEmail("test@test.com").isEmpty()) {
+            var user = new hexlet.code.model.User();
+            user.setEmail("test@test.com");
+            user.setPasswordDigest("password");
+            userRepository.save(user);
+        }
+        token = jwtUtils.generateToken("test@test.com");
 
-        var status = new TaskStatus();
-        status.setName("Draft");
-        status.setSlug("draft");
-        taskStatusRepository.save(status);
-
-        var task = new Task();
-        task.setName("Test task");
-        task.setDescription("Test content");
-        task.setTaskStatus(status);
-        taskRepository.save(task);
-
-        token = jwtUtils.generateToken(user.getEmail());
-        testTask = task;
+        var label = new Label();
+        label.setName("Test label");
+        labelRepository.save(label);
+        testLabel = label;
     }
 
     @Test
-    public void testGetAllTasks() throws Exception {
-        mockMvc.perform(get("/api/tasks")
+    public void testGetAllLabels() throws Exception {
+        mockMvc.perform(get("/api/labels")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].title").value("Test task"));
+                .andExpect(jsonPath("$[0].name").value("Test label"));
     }
 
     @Test
-    public void testCreateTask() throws Exception {
-        mockMvc.perform(post("/api/tasks")
+    public void testCreateLabel() throws Exception {
+        mockMvc.perform(post("/api/labels")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                    "title": "New task",
-                                    "content": "New content",
-                                    "status": "draft"
+                                    "name": "New label"
                                 }
                                 """)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("New task"))
-                .andExpect(jsonPath("$.status").value("draft"));
+                .andExpect(jsonPath("$.name").value("New label"));
     }
 
     @Test
-    public void testGetTaskById() throws Exception {
-       mockMvc.perform(get("/api/tasks/" + testTask.getId())
+    public void testGetLabelById() throws Exception {
+        mockMvc.perform(get("/api/labels/" + testLabel.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Test task"));
+                .andExpect(jsonPath("$.name").value("Test label"));
     }
 
     @Test
-    public void testUpdateTask() throws Exception {
-        mockMvc.perform(put("/api/tasks/" + testTask.getId())
+    public void testUpdateLabel() throws Exception {
+        mockMvc.perform(put("/api/labels/" + testLabel.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                    "title": "Updated task"
+                                    "name": "Updated label"
                                 }
                                 """)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Updated task"))
-                .andExpect(jsonPath("$.content").value("Test content")); // старое поле не затёрлось
+                .andExpect(jsonPath("$.name").value("Updated label"));
     }
 
     @Test
-    public void testDeleteTask() throws Exception {
-        mockMvc.perform(delete("/api/tasks/" + testTask.getId())
+    public void testDeleteLabel() throws Exception {
+        mockMvc.perform(delete("/api/labels/" + testLabel.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }

@@ -1,4 +1,4 @@
-package hexlet.code.utils;
+package hexlet.code.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
