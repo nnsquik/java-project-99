@@ -7,6 +7,7 @@ import hexlet.code.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,8 +28,11 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping
-    public List<TaskDTO> index() {
-        return taskService.getAll();
+    public ResponseEntity<List<TaskDTO>> index() {
+        var tasks = taskService.getAll();
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(tasks.size()))
+                .body(tasks);
     }
 
     @GetMapping("/{id}")
