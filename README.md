@@ -4,7 +4,7 @@
 
 # Java Task Manager
 
-## Ссылка на приложение
+## Link to the app
 https://java-project-99-60ng.onrender.com/welcome
 
 ## Requirements
