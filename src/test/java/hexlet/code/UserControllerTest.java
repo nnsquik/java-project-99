@@ -1,6 +1,8 @@
 package hexlet.code;
 
 import hexlet.code.model.User;
+import hexlet.code.repository.LabelRepository;
+import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.util.JWTUtils;
@@ -36,6 +38,12 @@ public class UserControllerTest {
     private TaskStatusRepository taskStatusRepository;
 
     @Autowired
+    private LabelRepository labelRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
     private JWTUtils jwtUtils;
 
     private MockMvc mockMvc;
@@ -48,8 +56,10 @@ public class UserControllerTest {
                 .apply(SecurityMockMvcConfigurers.springSecurity())
                 .build();
 
-        userRepository.deleteAll();
+        taskRepository.deleteAll();
+        labelRepository.deleteAll();
         taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
 
         var user = new User();
         user.setEmail("test@test.com");

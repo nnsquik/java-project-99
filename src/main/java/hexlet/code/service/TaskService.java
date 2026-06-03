@@ -1,10 +1,12 @@
 package hexlet.code.service;
 
+import hexlet.code.dto.filter.TaskFilter;
 import hexlet.code.dto.task.TaskCreateDTO;
 import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.dto.task.TaskUpdateDTO;
 import hexlet.code.mapper.TaskMapper;
 import hexlet.code.repository.TaskRepository;
+import hexlet.code.specification.TaskSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final TaskSpecification taskSpecification;
 
     public List<TaskDTO> getAll() {
         return taskRepository.findAll().stream()
@@ -45,5 +48,12 @@ public class TaskService {
 
     public void delete(Long id) {
         taskRepository.deleteById(id);
+    }
+
+    public List<TaskDTO> getAll(TaskFilter filter) {
+        var spec = taskSpecification.build(filter);
+        return taskRepository.findAll(spec).stream()
+                .map(taskMapper::map)
+                .toList();
     }
 }
