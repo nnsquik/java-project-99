@@ -9,4 +9,11 @@ public final class WelcomeController {
     public String welcome() {
         return "Welcome to Spring!";
     }
+
+    /*
+     * @GetMapping("/sentry-test")
+    public String sentryTest() {
+        throw new RuntimeException("Test Sentry error!");
+    }
+    **/
 }
