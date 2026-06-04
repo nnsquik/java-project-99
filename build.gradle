@@ -5,6 +5,7 @@ plugins {
 	id("io.freefair.lombok") version "9.5.0"
 	id("org.sonarqube") version "7.2.3.7755"
 	id 'checkstyle'
+	id "io.sentry.jvm.gradle" version "6.9.0"
 }
 
 group = 'hexlet.code'
@@ -63,6 +64,17 @@ sonar {
 		property("sonar.organization", "nesquik")
 		property 'sonar.host.url', 'https://sonarcloud.io'
 	}
+}
+
+sentry {
+	// Generates a JVM (Java, Kotlin, etc.) source bundle and uploads your source code to Sentry.
+	// This enables source context, allowing you to see your source
+	// code as part of your stack traces in Sentry.
+	includeSourceContext = true
+
+	org = "n-wh"
+	projectName = "java-spring-boot"
+	authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
 
 tasks.named('test') {

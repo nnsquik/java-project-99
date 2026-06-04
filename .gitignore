@@ -94,3 +94,6 @@ src/main/resources/certs/*.pem
 node_modules/
 
 .env
+
+src/main/resources/public/
+src/main/resources/static/
