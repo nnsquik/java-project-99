@@ -80,3 +80,35 @@ sentry {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register('generateTestKeys') {
+	doLast {
+		def certsDir = file("src/main/resources/certs")
+		if (!certsDir.exists()) {
+			certsDir.mkdirs()
+		}
+
+		def privateKey = new File(certsDir, "private.pem")
+		def publicKey = new File(certsDir, "public.pem")
+
+		if (!privateKey.exists() || !publicKey.exists()) {
+			println "Generating RSA keys for tests..."
+
+			// Генерируем приватный ключ через openssl
+			exec {
+				commandLine 'openssl', 'genrsa', '-out', privateKey.absolutePath, '2048'
+			}
+			// Генерируем публичный ключ
+			exec {
+				commandLine 'openssl', 'rsa', '-in', privateKey.absolutePath, '-pubout', '-out', publicKey.absolutePath
+			}
+		}
+	}
+}
+
+tasks.named('compileJava') {
+	dependsOn 'generateTestKeys'
+}
+tasks.named('test') {
+	dependsOn 'generateTestKeys'
+}
