@@ -11,18 +11,19 @@ import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
-import org.mapstruct.Named;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
-import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Mapper(
         uses = {JsonNullableMapper.class},
@@ -33,15 +34,15 @@ import java.util.Set;
 public abstract class TaskMapper {
 
     @Autowired
-    private TaskStatusMapper taskStatusMapper;
+    private UserRepository userRepository;
 
     @Autowired
-    private UserRepository userRepository;
-    @Autowired
     private TaskStatusRepository taskStatusRepository;
+
     @Autowired
     private LabelRepository labelRepository;
 
+    // ---------- ENTITY -> DTO ----------
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "title", source = "name")
@@ -49,6 +50,7 @@ public abstract class TaskMapper {
     @Mapping(target = "status", source = "taskStatus.slug")
     public abstract TaskDTO map(Task task);
 
+    // ---------- CREATE DTO -> ENTITY ----------
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "idsToLabels")
     @Mapping(target = "taskStatus", source = "status", qualifiedByName = "slugToTaskStatus")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "idToUser")
@@ -56,6 +58,7 @@ public abstract class TaskMapper {
     @Mapping(target = "description", source = "content")
     public abstract Task map(TaskCreateDTO dto);
 
+    // ---------- UPDATE DTO -> ENTITY ----------
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "idsToLabels")
     @Mapping(target = "taskStatus", source = "status", qualifiedByName = "slugToTaskStatus")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "idToUser")
@@ -63,6 +66,7 @@ public abstract class TaskMapper {
     @Mapping(target = "description", source = "content")
     public abstract void update(TaskUpdateDTO dto, @MappingTarget Task task);
 
+    // ---------- HELPERS ----------
     @Named("slugToTaskStatus")
     public TaskStatus slugToTaskStatus(String slug) {
         return taskStatusRepository.findBySlug(slug).orElse(null);
@@ -92,6 +96,6 @@ public abstract class TaskMapper {
         return ids.stream()
                 .map(id -> labelRepository.findById(id).orElse(null))
                 .filter(label -> label != null)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
     }
 }
