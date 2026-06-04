@@ -7,6 +7,9 @@
 ## Link to the app
 https://java-project-99-60ng.onrender.com/welcome
 
+## API Documentation
+https://java-project-99-60ng.onrender.com/swagger-ui/index.html
+
 ## Requirements
 -   Java 21+
 -   Gradle 8+
