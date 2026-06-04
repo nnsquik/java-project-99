@@ -27,5 +27,6 @@ public class TaskCreateDTO {
     @JsonProperty("assignee_id")
     private Long assigneeId;
 
-    private List<Long> labelIds = new ArrayList<>(); // id меток
+    @JsonProperty("taskLabelIds")
+    private List<Long> taskLabelIds = new ArrayList<>();
 }

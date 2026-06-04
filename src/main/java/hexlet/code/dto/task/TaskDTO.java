@@ -21,5 +21,7 @@ public class TaskDTO {
     private String title;
     private String content;
     private String status;
-    private List<Long> labelIds = new ArrayList<>();
+
+    @JsonProperty("taskLabelIds")
+    private List<Long> taskLabelIds = new ArrayList<>();
 }
