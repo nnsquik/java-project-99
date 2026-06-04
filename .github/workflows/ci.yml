@@ -11,16 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Клонируем репозиторий
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # 2. Устанавливаем Java 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
+      # 3. Кэшируем зависимости Gradle
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -30,9 +33,11 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
           restore-keys: ${{ runner.os }}-gradle-
 
+      # 4. Права на gradlew
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # Генерируем RSA ключи перед сборкой
       - name: Generate RSA keys
         run: |
           mkdir -p src/main/resources/certs
@@ -40,16 +45,17 @@ jobs:
           openssl rsa -in src/main/resources/certs/private.pem \
             -pubout -out src/main/resources/certs/public.pem
 
+      # Сборка фронтенда
       - name: Install and build frontend
         run: |
           npm i @hexlet/java-task-manager-frontend
           npx build-frontend
 
+      # 5. Собираем проект и запускаем тесты
       - name: Build with Gradle
         run: ./gradlew build
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+      # 6. Запускаем анализ SonarQube
       - name: SonarQube analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
