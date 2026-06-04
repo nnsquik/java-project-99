@@ -5,15 +5,15 @@ plugins {
 	id("io.freefair.lombok") version "9.5.0"
 	id("org.sonarqube") version "7.2.3.7755"
 	id 'checkstyle'
-	id "io.sentry.jvm.gradle" version "6.9.0"
 }
 
 group = 'hexlet.code'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 repositories {
@@ -65,50 +65,6 @@ sonar {
 	}
 }
 
-sentry {
-	def hasAuthToken = System.getenv("SENTRY_AUTH_TOKEN") != null
-
-	includeSourceContext = hasAuthToken
-
-	autoUploadSourceContext = hasAuthToken
-
-	org = "n-wh"
-	projectName = "java-spring-boot"
-	authToken = System.getenv("SENTRY_AUTH_TOKEN")
-}
-
 tasks.named('test') {
 	useJUnitPlatform()
-}
-
-import java.io.File
-
-tasks.register('generateTestKeys') {
-	doLast {
-		def certsDir = file("src/main/resources/certs")
-		if (!certsDir.exists()) {
-			certsDir.mkdirs()
-		}
-
-		def privateKey = new File(certsDir, "private.pem")
-		def publicKey = new File(certsDir, "public.pem")
-
-		if (!privateKey.exists() || !publicKey.exists()) {
-			println "Generating RSA keys for tests..."
-
-			project.exec {
-				commandLine 'openssl', 'genrsa', '-out', privateKey.absolutePath, '2048'
-			}
-			project.exec {
-				commandLine 'openssl', 'rsa', '-in', privateKey.absolutePath, '-pubout', '-out', publicKey.absolutePath
-			}
-		}
-	}
-}
-
-tasks.named('compileJava') {
-	dependsOn 'generateTestKeys'
-}
-tasks.named('test') {
-	dependsOn 'generateTestKeys'
 }
