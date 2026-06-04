@@ -81,6 +81,8 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+import java.io.File
+
 tasks.register('generateTestKeys') {
 	doLast {
 		def certsDir = file("src/main/resources/certs")
@@ -94,12 +96,10 @@ tasks.register('generateTestKeys') {
 		if (!privateKey.exists() || !publicKey.exists()) {
 			println "Generating RSA keys for tests..."
 
-			// Генерируем приватный ключ через openssl
-			exec {
+			project.exec {
 				commandLine 'openssl', 'genrsa', '-out', privateKey.absolutePath, '2048'
 			}
-			// Генерируем публичный ключ
-			exec {
+			project.exec {
 				commandLine 'openssl', 'rsa', '-in', privateKey.absolutePath, '-pubout', '-out', publicKey.absolutePath
 			}
 		}
