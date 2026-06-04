@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Mapper(
         uses = {JsonNullableMapper.class},
@@ -34,15 +33,14 @@ import java.util.stream.Collectors;
 public abstract class TaskMapper {
 
     @Autowired
-    private UserRepository userRepository;
+    private TaskStatusRepository taskStatusRepository;
 
     @Autowired
-    private TaskStatusRepository taskStatusRepository;
+    private UserRepository userRepository;
 
     @Autowired
     private LabelRepository labelRepository;
 
-    // ---------- ENTITY -> DTO ----------
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "title", source = "name")
@@ -50,7 +48,6 @@ public abstract class TaskMapper {
     @Mapping(target = "status", source = "taskStatus.slug")
     public abstract TaskDTO map(Task task);
 
-    // ---------- CREATE DTO -> ENTITY ----------
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "idsToLabels")
     @Mapping(target = "taskStatus", source = "status", qualifiedByName = "slugToTaskStatus")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "idToUser")
@@ -58,7 +55,6 @@ public abstract class TaskMapper {
     @Mapping(target = "description", source = "content")
     public abstract Task map(TaskCreateDTO dto);
 
-    // ---------- UPDATE DTO -> ENTITY ----------
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "idsToLabels")
     @Mapping(target = "taskStatus", source = "status", qualifiedByName = "slugToTaskStatus")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "idToUser")
@@ -66,7 +62,6 @@ public abstract class TaskMapper {
     @Mapping(target = "description", source = "content")
     public abstract void update(TaskUpdateDTO dto, @MappingTarget Task task);
 
-    // ---------- HELPERS ----------
     @Named("slugToTaskStatus")
     public TaskStatus slugToTaskStatus(String slug) {
         return taskStatusRepository.findBySlug(slug).orElse(null);
@@ -96,6 +91,6 @@ public abstract class TaskMapper {
         return ids.stream()
                 .map(id -> labelRepository.findById(id).orElse(null))
                 .filter(label -> label != null)
-                .collect(Collectors.toSet());
+                .collect(java.util.stream.Collectors.toSet());
     }
 }
