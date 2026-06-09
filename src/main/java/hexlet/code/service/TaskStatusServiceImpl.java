@@ -3,6 +3,7 @@ package hexlet.code.service;
 import hexlet.code.dto.status.TaskStatusCreateDTO;
 import hexlet.code.dto.status.TaskStatusDTO;
 import hexlet.code.dto.status.TaskStatusUpdateDTO;
+import hexlet.code.interfaces.TaskStatusService;
 import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.repository.TaskStatusRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class TaskStatusService {
+public class TaskStatusServiceImpl implements TaskStatusService {
 
     private final TaskStatusRepository taskStatusRepository;
     private final TaskStatusMapper taskStatusMapper;
@@ -44,11 +45,6 @@ public class TaskStatusService {
     }
 
     public void delete(Long id) {
-        var taskStatus = taskStatusRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("TaskStatus not found"));
-        if (!taskStatus.getTasks().isEmpty()) {
-            throw new RuntimeException("Cannot delete status with tasks");
-        }
         taskStatusRepository.deleteById(id);
     }
 }

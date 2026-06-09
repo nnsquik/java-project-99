@@ -3,6 +3,7 @@ package hexlet.code.service;
 import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
+import hexlet.code.interfaces.UserService;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
@@ -14,7 +15,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -46,11 +48,6 @@ public class UserService {
     }
 
     public void delete(Long id) {
-        var user = userRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!user.getTasks().isEmpty()) {
-            throw new RuntimeException("Cannot delete user with tasks");
-        }
         userRepository.deleteById(id);
     }
 

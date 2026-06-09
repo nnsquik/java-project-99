@@ -1,5 +1,8 @@
 package hexlet.code;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.dto.user.UserDTO;
 import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
@@ -16,11 +19,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,8 +51,12 @@ public class UserControllerTest {
     @Autowired
     private JWTUtils jwtUtils;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private MockMvc mockMvc;
     private String token;
+    private User testUser;
 
     @BeforeEach
     public void setUp() {
@@ -61,20 +70,27 @@ public class UserControllerTest {
         taskStatusRepository.deleteAll();
         userRepository.deleteAll();
 
-        var user = new User();
-        user.setEmail("test@test.com");
-        user.setPasswordDigest("qwerty");
-        userRepository.save(user);
+        testUser = new User();
+        testUser.setEmail("test@test.com");
+        testUser.setPasswordDigest("qwerty");
+        userRepository.save(testUser);
 
-        token = jwtUtils.generateToken(user.getEmail());
+        token = jwtUtils.generateToken(testUser.getEmail());
     }
 
     @Test
     public void testGetAllUsers() throws Exception {
-        mockMvc.perform(get("/api/users")
+        var result = mockMvc.perform(get("/api/users")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andReturn();
+
+        var body = result.getResponse().getContentAsString();
+        var users = objectMapper.readValue(body, new TypeReference<List<UserDTO>>() { });
+        var usersFromDb = userRepository.findAll();
+
+        assertThat(users).hasSize(usersFromDb.size());
+        assertThat(users.get(0).getEmail()).isEqualTo(testUser.getEmail());
     }
 
     @Test
@@ -86,13 +102,19 @@ public class UserControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/users")
+        var result = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("new@test.com"))
-                .andExpect(jsonPath("$.password").doesNotExist());
+                .andReturn();
+
+        var createdUser = userRepository.findByEmail("new@test.com");
+        assertThat(createdUser).isPresent();
+        assertThat(createdUser.get().getEmail()).isEqualTo("new@test.com");
+
+        var responseBody = result.getResponse().getContentAsString();
+        assertThat(responseBody).doesNotContain("password");
     }
 
     @Test
@@ -109,16 +131,22 @@ public class UserControllerTest {
                         .content(body)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
+
+        assertThat(userRepository.findByEmail("not-an-email")).isEmpty();
     }
 
     @Test
     public void testGetUserById() throws Exception {
-        var id = userRepository.findByEmail("test@test.com").get().getId();
-
-        mockMvc.perform(get("/api/users/" + id)
+        var result = mockMvc.perform(get("/api/users/" + testUser.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("test@test.com"));
+                .andReturn();
+
+        var body = result.getResponse().getContentAsString();
+        var userDTO = objectMapper.readValue(body, UserDTO.class);
+
+        assertThat(userDTO.getEmail()).isEqualTo(testUser.getEmail());
+        assertThat(userDTO.getId()).isEqualTo(testUser.getId());
     }
 
     @Test
@@ -131,20 +159,23 @@ public class UserControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/users/" + id)
+        mockMvc.perform(put("/api/users/" + testUser.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBody)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("updated@test.com"));
+
+        var updatedUser = userRepository.findById(testUser.getId()).get();
+        assertThat(updatedUser.getEmail()).isEqualTo("updated@test.com");
     }
 
     @Test
     public void testDeleteUser() throws Exception {
-        var id = userRepository.findByEmail("test@test.com").get().getId();
-
-        mockMvc.perform(delete("/api/users/" + id)
+        mockMvc.perform(delete("/api/users/" + testUser.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById(testUser.getId())).isEmpty();
     }
 }

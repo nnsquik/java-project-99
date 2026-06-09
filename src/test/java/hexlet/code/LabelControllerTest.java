@@ -1,8 +1,13 @@
 package hexlet.code;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.dto.label.LabelDTO;
 import hexlet.code.model.Label;
+import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
+import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.util.JWTUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,14 +20,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 public class LabelControllerTest {
 
     @Autowired
@@ -35,10 +42,16 @@ public class LabelControllerTest {
     private TaskRepository taskRepository;
 
     @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private JWTUtils jwtUtils;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private MockMvc mockMvc;
     private String token;
@@ -53,28 +66,33 @@ public class LabelControllerTest {
 
         taskRepository.deleteAll();
         labelRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
 
-        if (userRepository.findByEmail("test@test.com").isEmpty()) {
-            var user = new hexlet.code.model.User();
-            user.setEmail("test@test.com");
-            user.setPasswordDigest("password");
-            userRepository.save(user);
-        }
+        var user = new User();
+        user.setEmail("test@test.com");
+        user.setPasswordDigest("password");
+        userRepository.save(user);
         token = jwtUtils.generateToken("test@test.com");
 
-        var label = new Label();
-        label.setName("Test label");
-        labelRepository.save(label);
-        testLabel = label;
+        testLabel = new Label();
+        testLabel.setName("Test label");
+        labelRepository.save(testLabel);
     }
 
     @Test
     public void testGetAllLabels() throws Exception {
-        mockMvc.perform(get("/api/labels")
+        var result = mockMvc.perform(get("/api/labels")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Test label"));
+                .andReturn();
+
+        var body = result.getResponse().getContentAsString();
+        var labels = objectMapper.readValue(body, new TypeReference<List<LabelDTO>>() { });
+        var labelsFromDb = labelRepository.findAll();
+
+        assertThat(labels).hasSize(labelsFromDb.size());
+        assertThat(labels.get(0).getName()).isEqualTo(testLabel.getName());
     }
 
     @Test
@@ -87,16 +105,25 @@ public class LabelControllerTest {
                                 }
                                 """)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("New label"));
+                .andExpect(status().isCreated());
+
+        var createdLabel = labelRepository.findByName("New label");
+        assertThat(createdLabel).isPresent();
+        assertThat(createdLabel.get().getName()).isEqualTo("New label");
     }
 
     @Test
     public void testGetLabelById() throws Exception {
-        mockMvc.perform(get("/api/labels/" + testLabel.getId())
+        var result = mockMvc.perform(get("/api/labels/" + testLabel.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test label"));
+                .andReturn();
+
+        var body = result.getResponse().getContentAsString();
+        var labelDTO = objectMapper.readValue(body, LabelDTO.class);
+
+        assertThat(labelDTO.getName()).isEqualTo(testLabel.getName());
+        assertThat(labelDTO.getId()).isEqualTo(testLabel.getId());
     }
 
     @Test
@@ -109,8 +136,10 @@ public class LabelControllerTest {
                                 }
                                 """)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated label"));
+                .andExpect(status().isOk());
+
+        var updatedLabel = labelRepository.findById(testLabel.getId()).get();
+        assertThat(updatedLabel.getName()).isEqualTo("Updated label");
     }
 
     @Test
@@ -118,5 +147,7 @@ public class LabelControllerTest {
         mockMvc.perform(delete("/api/labels/" + testLabel.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
+
+        assertThat(labelRepository.findById(testLabel.getId())).isEmpty();
     }
 }

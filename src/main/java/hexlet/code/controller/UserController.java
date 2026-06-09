@@ -3,7 +3,7 @@ package hexlet.code.controller;
 import hexlet.code.dto.user.UserCreateDTO;
 import hexlet.code.dto.user.UserDTO;
 import hexlet.code.dto.user.UserUpdateDTO;
-import hexlet.code.service.UserService;
+import hexlet.code.interfaces.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -49,13 +49,13 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@userService.isOwner(#id, authentication.name)")
+    @PreAuthorize("@userServiceImpl.isOwner(#id, authentication.name)")
     public UserDTO update(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto) {
         return userService.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("@userService.isOwner(#id, authentication.name)")
+    @PreAuthorize("@userServiceImpl.isOwner(#id, authentication.name)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         userService.delete(id);

@@ -1,8 +1,12 @@
 package hexlet.code;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.dto.task.TaskDTO;
 import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
+import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
@@ -17,11 +21,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -40,7 +46,13 @@ public class TaskControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private LabelRepository labelRepository;
+
+    @Autowired
     private JWTUtils jwtUtils;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private MockMvc mockMvc;
     private String token;
@@ -54,6 +66,7 @@ public class TaskControllerTest {
                 .build();
 
         taskRepository.deleteAll();
+        labelRepository.deleteAll();
         taskStatusRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -79,11 +92,17 @@ public class TaskControllerTest {
 
     @Test
     public void testGetAllTasks() throws Exception {
-        mockMvc.perform(get("/api/tasks")
+        var result = mockMvc.perform(get("/api/tasks")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].title").value("Test task"));
+                .andReturn();
+
+        var body = result.getResponse().getContentAsString();
+        var tasks = objectMapper.readValue(body, new TypeReference<List<TaskDTO>>() { });
+        var tasksFromDb = taskRepository.findAll();
+
+        assertThat(tasks).hasSize(tasksFromDb.size());
+        assertThat(tasks.get(0).getTitle()).isEqualTo(testTask.getName());
     }
 
     @Test
@@ -98,17 +117,27 @@ public class TaskControllerTest {
                                 }
                                 """)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("New task"))
-                .andExpect(jsonPath("$.status").value("draft"));
+                .andExpect(status().isCreated());
+
+        var createdTask = taskRepository.findAll().stream()
+                .filter(t -> t.getName().equals("New task"))
+                .findFirst();
+        assertThat(createdTask).isPresent();
+        assertThat(createdTask.get().getDescription()).isEqualTo("New content");
     }
 
     @Test
     public void testGetTaskById() throws Exception {
-       mockMvc.perform(get("/api/tasks/" + testTask.getId())
+        var result = mockMvc.perform(get("/api/tasks/" + testTask.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Test task"));
+                .andReturn();
+
+        var body = result.getResponse().getContentAsString();
+        var taskDTO = objectMapper.readValue(body, TaskDTO.class);
+
+        assertThat(taskDTO.getTitle()).isEqualTo(testTask.getName());
+        assertThat(taskDTO.getId()).isEqualTo(testTask.getId());
     }
 
     @Test
@@ -121,9 +150,11 @@ public class TaskControllerTest {
                                 }
                                 """)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Updated task"))
-                .andExpect(jsonPath("$.content").value("Test content")); // старое поле не затёрлось
+                .andExpect(status().isOk());
+
+        var updatedTask = taskRepository.findById(testTask.getId()).get();
+        assertThat(updatedTask.getName()).isEqualTo("Updated task");
+        assertThat(updatedTask.getDescription()).isEqualTo("Test content"); // не затёрлось
     }
 
     @Test
@@ -131,5 +162,7 @@ public class TaskControllerTest {
         mockMvc.perform(delete("/api/tasks/" + testTask.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
+
+        assertThat(taskRepository.findById(testTask.getId())).isEmpty();
     }
 }

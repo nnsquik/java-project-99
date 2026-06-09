@@ -3,6 +3,7 @@ package hexlet.code.service;
 import hexlet.code.dto.label.LabelCreateDTO;
 import hexlet.code.dto.label.LabelDTO;
 import hexlet.code.dto.label.LabelUpdateDTO;
+import hexlet.code.interfaces.LabelService;
 import hexlet.code.mapper.LabelMapper;
 import hexlet.code.repository.LabelRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class LabelService {
+public class LabelServiceImpl  implements LabelService {
 
     private final LabelRepository labelRepository;
     private final LabelMapper labelMapper;
@@ -44,11 +45,6 @@ public class LabelService {
     }
 
     public void delete(Long id) {
-        var label = labelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Label not found"));
-        if (!label.getTasks().isEmpty()) {
-            throw new RuntimeException("Cannot delete label with tasks");
-        }
         labelRepository.deleteById(id);
     }
 }

@@ -88,9 +88,6 @@ public abstract class TaskMapper {
         if (ids == null) {
             return new HashSet<>();
         }
-        return ids.stream()
-                .map(id -> labelRepository.findById(id).orElse(null))
-                .filter(label -> label != null)
-                .collect(java.util.stream.Collectors.toSet());
+        return new HashSet<>(labelRepository.findAllById(ids));
     }
 }

@@ -1,5 +1,8 @@
 package hexlet.code;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.dto.status.TaskStatusDTO;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
@@ -17,12 +20,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
     @SpringBootTest
@@ -46,8 +50,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Autowired
         private JWTUtils jwtUtils;
 
+        @Autowired
+        private ObjectMapper objectMapper;
+
         private String token;
         private MockMvc mockMvc;
+
+        private TaskStatus testStatus;
 
         @BeforeEach
         public void setUp() {
@@ -65,75 +74,88 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             user.setEmail("test@test.com");
             user.setPasswordDigest("qwerty");
             userRepository.save(user);
-
-            var taskStatus = new TaskStatus();
-            taskStatus.setName("New");
-            taskStatus.setSlug("new");
-            taskStatusRepository.save(taskStatus);
-
             token = jwtUtils.generateToken(user.getEmail());
+
+            testStatus = new TaskStatus();
+            testStatus.setName("New");
+            testStatus.setSlug("new");
+            taskStatusRepository.save(testStatus);
         }
 
         @Test
         public void testGetAllStatuses() throws Exception {
-            mockMvc.perform(get("/api/task_statuses")
+            var result = mockMvc.perform(get("/api/task_statuses")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$").isArray());
+                    .andReturn();
+
+            var body = result.getResponse().getContentAsString();
+            var statuses = objectMapper.readValue(body, new TypeReference<List<TaskStatusDTO>>() { });
+            var statusesFromDb = taskStatusRepository.findAll();
+
+            assertThat(statuses).hasSize(statusesFromDb.size());
+            assertThat(statuses.get(0).getSlug()).isEqualTo(testStatus.getSlug());
         }
 
         @Test
         public void testCreateStatus() throws Exception {
             var body = """
-                    {
-                        "name": "Test",
-                        "slug": "test"
-                    }
-                    """;
+                {
+                    "name": "Test",
+                    "slug": "test"
+                }
+                """;
 
             mockMvc.perform(post("/api/task_statuses")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body)
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.name").value("Test"))
-                    .andExpect(jsonPath("$.slug").value("test"));
+                    .andExpect(status().isCreated());
+
+            var createdStatus = taskStatusRepository.findBySlug("test");
+            assertThat(createdStatus).isPresent();
+            assertThat(createdStatus.get().getName()).isEqualTo("Test");
         }
 
         @Test
         public void testGetStatusById() throws Exception {
-            var id = taskStatusRepository.findBySlug("new").get().getId();
-
-            mockMvc.perform(get("/api/task_statuses/" + id)
+            var result = mockMvc.perform(get("/api/task_statuses/" + testStatus.getId())
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.name").value("New"));
+                    .andReturn();
+
+            var body = result.getResponse().getContentAsString();
+            var statusDTO = objectMapper.readValue(body, TaskStatusDTO.class);
+
+            assertThat(statusDTO.getName()).isEqualTo(testStatus.getName());
+            assertThat(statusDTO.getSlug()).isEqualTo(testStatus.getSlug());
         }
 
         @Test
         public void testUpdateStatus() throws Exception {
-            var id = taskStatusRepository.findBySlug("new").get().getId();
-
             var updateBody = """
-                    {
-                        "name": "Updated"
-                    }
-                    """;
+                {
+                    "name": "Updated"
+                }
+                """;
 
-            mockMvc.perform(put("/api/task_statuses/" + id)
+            mockMvc.perform(put("/api/task_statuses/" + testStatus.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(updateBody)
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.name").value("Updated"));
+                    .andExpect(status().isOk());
+
+            var updatedStatus = taskStatusRepository.findById(testStatus.getId()).get();
+            assertThat(updatedStatus.getName()).isEqualTo("Updated");
+            assertThat(updatedStatus.getSlug()).isEqualTo("new"); // slug не изменился
         }
 
         @Test
         public void testDeleteStatus() throws Exception {
-            var id = taskStatusRepository.findBySlug("new").get().getId();
-
-            mockMvc.perform(delete("/api/task_statuses/" + id)
+            mockMvc.perform(delete("/api/task_statuses/" + testStatus.getId())
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isNoContent());
+
+            assertThat(taskStatusRepository.findById(testStatus.getId())).isEmpty();
         }
     }
