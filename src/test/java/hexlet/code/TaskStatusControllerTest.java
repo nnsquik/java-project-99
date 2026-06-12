@@ -94,7 +94,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             var statusesFromDb = taskStatusRepository.findAll();
 
             assertThat(statuses).hasSize(statusesFromDb.size());
-            assertThat(statuses.get(0).getSlug()).isEqualTo(testStatus.getSlug());
+
+            var statusFromResponse = statuses.stream()
+                    .map(TaskStatusDTO::getSlug)
+                    .toList();
+            var statusFromDb = statusesFromDb.stream()
+                    .map(TaskStatus::getSlug)
+                    .toList();
+
+            assertThat(statusFromResponse).containsExactlyInAnyOrderElementsOf(statusFromDb);
         }
 
         @Test

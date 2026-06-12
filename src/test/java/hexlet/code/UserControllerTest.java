@@ -90,7 +90,15 @@ public class UserControllerTest {
         var usersFromDb = userRepository.findAll();
 
         assertThat(users).hasSize(usersFromDb.size());
-        assertThat(users.get(0).getEmail()).isEqualTo(testUser.getEmail());
+
+        var emailFromResponse = users.stream()
+                .map(UserDTO::getEmail)
+                .toList();
+        var emailsFromDb = usersFromDb.stream()
+                .map(User::getEmail)
+                .toList();
+
+        assertThat(emailFromResponse).containsExactlyInAnyOrderElementsOf(emailsFromDb);
     }
 
     @Test

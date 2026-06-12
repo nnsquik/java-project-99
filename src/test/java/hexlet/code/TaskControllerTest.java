@@ -102,7 +102,15 @@ public class TaskControllerTest {
         var tasksFromDb = taskRepository.findAll();
 
         assertThat(tasks).hasSize(tasksFromDb.size());
-        assertThat(tasks.get(0).getTitle()).isEqualTo(testTask.getName());
+
+        var taskFromResponse = tasks.stream()
+                .map(TaskDTO::getTitle)
+                .toList();
+        var taskFromDb = tasksFromDb.stream()
+                .map(Task::getName)
+                .toList();
+
+        assertThat(taskFromResponse).containsExactlyInAnyOrderElementsOf(taskFromDb);
     }
 
     @Test

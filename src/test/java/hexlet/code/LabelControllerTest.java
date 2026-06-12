@@ -92,7 +92,15 @@ public class LabelControllerTest {
         var labelsFromDb = labelRepository.findAll();
 
         assertThat(labels).hasSize(labelsFromDb.size());
-        assertThat(labels.get(0).getName()).isEqualTo(testLabel.getName());
+
+        var labelsFromResponse = labels.stream()
+                .map(LabelDTO::getName)
+                .toList();
+        var labelFromDb = labelsFromDb.stream()
+                .map(Label::getName)
+                .toList();
+
+        assertThat(labelsFromResponse).containsExactlyInAnyOrderElementsOf(labelFromDb);
     }
 
     @Test
