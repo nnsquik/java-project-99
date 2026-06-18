@@ -5,6 +5,7 @@ plugins {
 	id("io.freefair.lombok") version "9.5.0"
 	id("org.sonarqube") version "7.2.3.7755"
 	id 'checkstyle'
+	id'jacoco'
 }
 
 group = 'hexlet.code'
@@ -63,4 +64,15 @@ sonar {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+	}
+}
+
+test {
+	finalizedBy jacocoTestReport
 }
