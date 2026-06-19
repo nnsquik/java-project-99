@@ -2,7 +2,6 @@ package hexlet.code.specification;
 
 import hexlet.code.dto.filter.TaskFilter;
 import hexlet.code.model.Task;
-import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -16,20 +15,6 @@ public class TaskSpecification {
                 .and(withLabelId(filter.getLabelId()));
     }
 
-    // загружаем все связи одним запросом
-    private Specification<Task> withFetchJoins() {
-        return (root, query, criteriaBuilder) -> {
-            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
-                root.fetch("taskStatus", JoinType.LEFT);
-                root.fetch("assignee", JoinType.LEFT);
-                root.fetch("labels", JoinType.LEFT);
-            }
-            query.distinct(true);
-            return criteriaBuilder.conjunction();
-        };
-    }
-
-    // фильтр по названию - содержит подстроку
     private Specification<Task> withTitleCont(String titleCont) {
         return (root, query, criteriaBuilder) -> {
             if (titleCont == null || titleCont.isBlank()) {
@@ -42,7 +27,6 @@ public class TaskSpecification {
         };
     }
 
-    // фильтр по исполнителю
     private Specification<Task> withAssigneeId(Long assigneeId) {
         return (root, query, criteriaBuilder) -> {
             if (assigneeId == null) {
@@ -52,7 +36,6 @@ public class TaskSpecification {
         };
     }
 
-    // фильтр по статусу (slug)
     private Specification<Task> withStatus(String status) {
         return (root, query, criteriaBuilder) -> {
             if (status == null || status.isBlank()) {
@@ -62,7 +45,6 @@ public class TaskSpecification {
         };
     }
 
-    // фильтр по метке
     private Specification<Task> withLabelId(Long labelId) {
         return (root, query, criteriaBuilder) -> {
             if (labelId == null) {

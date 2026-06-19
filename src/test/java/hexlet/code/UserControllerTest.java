@@ -104,11 +104,11 @@ public class UserControllerTest {
     @Test
     public void testCreateUser() throws Exception {
         var body = """
-                {
-                    "email": "new@test.com",
-                    "password": "123"
-                }
-                """;
+            {
+                "email": "new@test.com",
+                "password": "123"
+            }
+            """;
 
         var result = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,22 +117,27 @@ public class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
+        var responseBody = result.getResponse().getContentAsString();
+        var userDTO = objectMapper.readValue(responseBody, UserDTO.class);
+
+        assertThat(userDTO.getEmail()).isEqualTo("new@test.com");
+        assertThat(userDTO.getId()).isNotNull();
+
+        var responseMap = objectMapper.readValue(responseBody, java.util.Map.class);
+        assertThat(responseMap).doesNotContainKey("password");
+
         var createdUser = userRepository.findByEmail("new@test.com");
         assertThat(createdUser).isPresent();
-        assertThat(createdUser.get().getEmail()).isEqualTo("new@test.com");
-
-        var responseBody = result.getResponse().getContentAsString();
-        assertThat(responseBody).doesNotContain("password");
     }
 
     @Test
     public void testCreateUserWithInvalidEmail() throws Exception {
         var body = """
-                {
-                    "email": "not-an-email",
-                    "password": "123"
-                }
-                """;
+        {
+            "email": "not-an-email",
+            "password": "123"
+        }
+        """;
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -159,13 +164,11 @@ public class UserControllerTest {
 
     @Test
     public void testUpdateUser() throws Exception {
-        var id = userRepository.findByEmail("test@test.com").get().getId();
-
         var updateBody = """
-                {
-                    "email": "updated@test.com"
-                }
-                """;
+            {
+                "email": "updated@test.com"
+            }
+            """;
 
         mockMvc.perform(put("/api/users/" + testUser.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -176,6 +179,29 @@ public class UserControllerTest {
 
         var updatedUser = userRepository.findById(testUser.getId()).get();
         assertThat(updatedUser.getEmail()).isEqualTo("updated@test.com");
+    }
+
+    @Test
+    public void testUpdateOtherUserForbidden() throws Exception {
+        var otherUser = new User();
+        otherUser.setEmail("other@test.com");
+        otherUser.setPasswordDigest("password");
+        userRepository.save(otherUser);
+
+        var updateBody = """
+            {
+                "email": "hacked@test.com"
+            }
+            """;
+
+        mockMvc.perform(put("/api/users/" + otherUser.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateBody)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+
+        var notUpdatedUser = userRepository.findById(otherUser.getId()).get();
+        assertThat(notUpdatedUser.getEmail()).isEqualTo("other@test.com");
     }
 
     @Test
